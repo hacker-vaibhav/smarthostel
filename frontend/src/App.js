@@ -12,6 +12,7 @@ import { Complaints } from './pages/Complaints';
 import { Payments } from './pages/Payments';
 import { Profile } from './pages/Profile';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { ManagementDashboard } from './pages/ManagementDashboard';
 
 import './App.css';
 
@@ -38,6 +39,15 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/management-dashboard"
+          element={
+            <ProtectedRoute>
+              <ManagementDashboard />
             </ProtectedRoute>
           }
         />

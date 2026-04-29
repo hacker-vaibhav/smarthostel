@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const { sendOTP } = require('../services/emailService');
+const { getTenantByCode, getDefaultTenant } = require('../services/tenantService');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
@@ -30,6 +31,15 @@ router.post('/send-otp', async (req, res) => {
       'INSERT INTO otps (email, otp, expiry) VALUES ($1, $2, $3)',
       [email, otpCode, expiry]
     );
+
+    if (process.env.NODE_ENV === 'development') {
+      return res.json({
+        message: 'OTP generated successfully',
+        email,
+        devOtp: otpCode,
+        warning: 'Development mode: use this OTP to complete registration.',
+      });
+    }
 
     await sendOTP(email, otpCode);
 
@@ -80,7 +90,8 @@ router.post('/verify-otp', async (req, res) => {
 // Register after OTP verification
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, phone, password, otp } = req.body;
+    const { name, email, phone, password, otp, tenant_code } = req.body;
+    const tenant = tenant_code ? await getTenantByCode(tenant_code) : await getDefaultTenant();
 
     const otpResult = await pool.query(
       'SELECT * FROM otps WHERE email = $1 AND otp = $2 AND verified = TRUE',
@@ -99,14 +110,16 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcryptjs.hash(password, 10);
 
     const result = await pool.query(
-      'INSERT INTO users (name, email, phone, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role',
-      [name, email, phone, hashedPassword, 'student']
+      `INSERT INTO users (tenant_id, name, email, phone, password, role)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, tenant_id, name, email, role`,
+      [tenant.id, name, email, phone, hashedPassword, 'student']
     );
 
     const user = result.rows[0];
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { user_id: user.id, id: user.id, email: user.email, role: user.role, tenant_id: user.tenant_id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
@@ -114,7 +127,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       message: 'Registration successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, tenant_id: user.tenant_id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
     console.error('Error registering user:', error);
@@ -143,7 +156,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { user_id: user.id, id: user.id, email: user.email, role: user.role, tenant_id: user.tenant_id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
@@ -151,7 +164,7 @@ router.post('/login', async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, tenant_id: user.tenant_id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
     console.error('Error logging in:', error);

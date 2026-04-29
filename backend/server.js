@@ -4,6 +4,8 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const { checkAndEscalateComplaints } = require('./services/staffService');
+const { notifyEscalation } = require('./services/notificationService');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,6 +28,9 @@ app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/roommate', require('./routes/roommate'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/management', require('./routes/management'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // WebSocket connection for real-time updates
 io.on('connection', (socket) => {
@@ -71,5 +76,14 @@ server.listen(PORT, () => {
   console.log(`📧 Email Service: Ready`);
   console.log(`🔌 WebSocket: Ready\n`);
 });
+
+setInterval(async () => {
+  try {
+    const escalatedComplaints = await checkAndEscalateComplaints();
+    await Promise.all(escalatedComplaints.map((complaint) => notifyEscalation(complaint)));
+  } catch (error) {
+    console.error('Escalation monitor failed:', error.message);
+  }
+}, 60 * 1000);
 
 module.exports = { app, io };

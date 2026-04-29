@@ -128,7 +128,7 @@ export const Payments = () => {
                             >
                               ✅ Pay
                             </motion.button>
-                            {['admin', 'warden'].includes(user?.role) && (
+                            {(user?.role === 'admin' || user?.role === 'management') && (
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}

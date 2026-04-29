@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, AlertCircle, TrendingUp } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import { complaintsService, roomsService, paymentsService } from '../services/api';
+import { complaintsService, roomsService, paymentsService, notificationsService } from '../services/api';
 import { ComplaintForm } from '../components/ComplaintForm';
 import { ComplaintCard } from '../components/ComplaintCard';
 import { DashboardStats } from '../components/StatsCard';
@@ -20,6 +20,7 @@ export const Dashboard = () => {
     pendingPayments: 0,
   });
   const [votedComplaints, setVotedComplaints] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -46,6 +47,8 @@ export const Dashboard = () => {
       // Fetch payments
       const paymentsRes = await paymentsService.getPayments();
       const pending = paymentsRes.data.filter(p => p.status === 'pending').length;
+      const notificationsRes = await notificationsService.getNotifications();
+      setNotifications(notificationsRes.data.slice(0, 5));
 
       setStats({
         totalRooms: roomsRes.data.length,
@@ -148,6 +151,27 @@ export const Dashboard = () => {
 
           {/* Right Column: Sidebar */}
           <div className="space-y-6">
+            {/* My Complaints */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-white rounded-xl shadow-soft p-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Notifications</h3>
+              {notifications.length === 0 ? (
+                <p className="text-gray-600 text-sm">No notifications yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((notification) => (
+                    <div key={notification.id} className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                      <p className="text-sm font-semibold text-slate-900">{notification.title}</p>
+                      <p className="text-xs text-slate-600 mt-1">{notification.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+
             {/* My Complaints */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}

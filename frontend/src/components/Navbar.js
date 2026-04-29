@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, Home, AlertCircle, Wallet, User, LogIn } from 'lucide-react';
+import { Menu, X, LogOut, Home, AlertCircle, Wallet, User, Building2, BarChart3 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 export const Navbar = () => {
@@ -32,6 +32,18 @@ export const Navbar = () => {
                   <Home size={18} />
                   <span>Dashboard</span>
                 </Link>
+                {(user.role === 'admin' || user.role === 'management') && (
+                  <Link to="/admin-dashboard" className="hover:text-purple-200 transition flex items-center space-x-1">
+                    <Building2 size={18} />
+                    <span>{user.role === 'admin' ? 'Admin' : 'Hostel Ops'}</span>
+                  </Link>
+                )}
+                {user.role === 'admin' && (
+                  <Link to="/management-dashboard" className="hover:text-purple-200 transition flex items-center space-x-1">
+                    <BarChart3 size={18} />
+                    <span>Analytics</span>
+                  </Link>
+                )}
                 <Link to="/complaints" className="hover:text-purple-200 transition flex items-center space-x-1">
                   <AlertCircle size={18} />
                   <span>Complaints</span>
@@ -81,6 +93,8 @@ export const Navbar = () => {
             {user ? (
               <>
                 <Link to="/dashboard" className="block px-4 py-2 hover:bg-purple-500 rounded">Dashboard</Link>
+                {(user.role === 'admin' || user.role === 'management') && <Link to="/admin-dashboard" className="block px-4 py-2 hover:bg-purple-500 rounded">{user.role === 'admin' ? 'Admin' : 'Hostel Ops'}</Link>}
+                {user.role === 'admin' && <Link to="/management-dashboard" className="block px-4 py-2 hover:bg-purple-500 rounded">Analytics</Link>}
                 <Link to="/complaints" className="block px-4 py-2 hover:bg-purple-500 rounded">Complaints</Link>
                 <Link to="/payments" className="block px-4 py-2 hover:bg-purple-500 rounded">Payments</Link>
                 <Link to="/profile" className="block px-4 py-2 hover:bg-purple-500 rounded">Profile</Link>

@@ -27,7 +27,11 @@ export const Login = () => {
       const response = await authService.login(email, password);
       
       login(response.data.user, response.data.token);
-      navigate('/dashboard');
+      if (response.data.user.role === 'admin' || response.data.user.role === 'management') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.message || '❌ Login failed');
     } finally {
